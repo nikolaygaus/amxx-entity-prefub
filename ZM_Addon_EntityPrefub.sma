@@ -1,5 +1,5 @@
 
-new const PluginVersion[] = "2.0.0";
+new const PluginVersion[] = "2.0.1";
 
 #include <amxmodx>
 #include <api_fubentity>
@@ -15,7 +15,21 @@ public plugin_precache() {
 	register_plugin("[API]: Entity Prefub", PluginVersion, "Ragamafona");
 
 	g_trDataSave = TrieCreate();
+
+	/* maybe
+	if(g_trDataSave == Invalid_Trie)
+	{
+		set_fail_state("Invalid trie");
+	}
+	*/
 }
+
+#if AMXX_VERSION_NUM < 183
+public plugin_end() {
+
+	TrieDestroy(g_trDataSave);
+}
+#endif
 
 public plugin_natives()	{
 
@@ -33,12 +47,11 @@ bool: @__fubentity_set_data() {
 	new pEntity = get_param(Arg_Entity);
 	new szKey[MaxKeyLength];
 	new szKeyTrie[MaxKeyLength + MaxIndexLength];
-	new iType = get_param(Arg_Type);
 
 	get_string(Arg_Key, szKey, MaxKeyLength-1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
 
-	switch(iType)
+	switch(get_param(Arg_Type))
 	{
 		case eType_Float:
 		{
@@ -71,12 +84,11 @@ any: @__fubentity_get_data() {
 	new pEntity = get_param(Arg_Entity);
 	new szKey[MaxKeyLength];
 	new szKeyTrie[MaxKeyLength + MaxIndexLength];
-	new iType = get_param(Arg_Type);
 
 	get_string(Arg_Key, szKey, MaxKeyLength-1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
 
-	switch(iType)
+	switch(get_param(Arg_Type))
 	{
 		case eType_Float:
 		{
@@ -93,7 +105,7 @@ any: @__fubentity_get_data() {
 			TrieGetString(g_trDataSave, szKeyTrie, szValueString, MaxStringDataLength-1);
 			set_string(Arg_Value, szValueString, get_param(Arg_ValueSize));
 
-			return 1;
+			return true;
 		}
 		default:
 		{
@@ -131,14 +143,14 @@ bool: @__fubentity_unset_data() {
 	get_string(Arg_Key, szKey, MaxKeyLength - 1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", get_param(Arg_Entity), szKey);
 
-	if(bool: TrieKeyExists(g_trDataSave, szKeyTrie) == false)
+	if(TrieKeyExists(g_trDataSave, szKeyTrie) == false)
 		return false;
 
 	TrieDeleteKey(g_trDataSave, szKeyTrie);
 	return true;
 }
 
-bool: @__fubentity_clear_data() {
+@__fubentity_clear_data() {
 
 	enum {Arg_Entity = 1};
 
@@ -147,6 +159,7 @@ bool: @__fubentity_clear_data() {
 	new szLeft[MaxIndexLength];
 	new szBuffer[2];
 	new pEntity = get_param(Arg_Entity);
+	new iCountKeys;
 
 	for(new iCase; iCase < TrieSnapshotLength(hListKeys); iCase++)
 	{
@@ -157,8 +170,9 @@ bool: @__fubentity_clear_data() {
 			continue;
 
 		TrieDeleteKey(g_trDataSave, szKey);
+		iCountKeys++;
 	}
 
 	TrieSnapshotDestroy(hListKeys);
-	return true;
+	return iCountKeys;
 }
