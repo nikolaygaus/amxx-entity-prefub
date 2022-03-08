@@ -19,6 +19,9 @@
 
 #define _fubentity_included
 
+stock const _sEntityPrefub_Version[] = "2.2.0";
+#define _EntityPrefub_Version 220
+
 enum _: {
 
 	eType_Integer = 0,
@@ -26,7 +29,34 @@ enum _: {
 	eType_String
 };
 
-const FubEntity_NotExists = -10000;
+enum _: {
+
+    eCustomData_UnSet = 0,
+    eCustomData_Set
+};
+
+/**
+ * Hook set/unset key.
+ * eCustomData_UnSet: Since the forward is executed before the operation, data can still be unloaded from the key.
+ * 
+ * @param pEntity       Index
+ * @param szKey         Key
+ * @param iForwardType  Forward type
+ * 
+ * @return              none
+ */
+forward evtfent_setted_data(const pEntity, const szKey[], const iForwardType);
+
+/**
+ * Hook change key data.
+ * 
+ * @param pEntity       Index
+ * @param szKey         Key
+ * @param bPost         Pre/Post event
+ * 
+ * @return              none
+ */
+forward evtfent_change_data(const pEntity, const szKey[], const bool: bPost);
 
 /**
  * Set key value.
@@ -37,9 +67,11 @@ const FubEntity_NotExists = -10000;
  * @param any:... 		Value
  * 
  * @note				Usage examples:
+ *                      [
  * 							fubentity_set_data(pPlayer, "crystal", eType_Integer, 5);
  * 							fubentity_set_data(pPlayer, "damage", eType_Float, 15.0);
  * 							fubentity_set_data(pPlayer, "zombiename", eType_String, "hunter");
+ *                      ]
  * 
  * @return 				none
  */
@@ -55,13 +87,15 @@ native fubentity_set_data(const pEntity, const szKey[], const iArgType = eType_I
  * @param iValueSize	String buffer length 
  * 
  * @note				Usage examples:
+ *                      [
  * 							new iReturn = fubentity_get_data(pEntity, "crystal", eType_Integer);
  * 							new Float: flReturn = fubentity_get_data(pPlayer, "damage", eType_Float);
- * 							new strReturn[32]; fubentity_get_data(pPlayer, "zombiename", eType_String, strReturn, charsmax(strReturn));
+ * 							new szReturn[32]; fubentity_get_data(pPlayer, "zombiename", eType_String, szReturn, charsmax(szReturn));
+ *                      ]
  * 
  * @return 				Value integer or float.
  */
-native any: fubentity_get_data(const pEntity, szKey[], const iArgType = eType_Integer, const szValue[] = "", const iValueSize = 0);
+native any: fubentity_get_data(const pEntity, const szKey[], const iArgType = eType_Integer, const szValue[] = "", const iValueSize = 0);
 
 /**
  * Removing a key and its value.
@@ -101,6 +135,7 @@ native bool: fubentity_isset_data(const pEntity, const szKey[]);
  * Removing getting keys by index.
  * 
  * @param pEntity 		Index
+ * @param bUseForward   Enable forward hook
  * 
  * @note				Usage examples:
  * 						[
@@ -110,4 +145,4 @@ native bool: fubentity_isset_data(const pEntity, const szKey[]);
  * 
  * @return 				Removed keys count
  */
-native fubentity_clear_data(const pEntity);
+native fubentity_clear_data(const pEntity, const bool: bUseForward = false);

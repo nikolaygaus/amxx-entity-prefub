@@ -1,6 +1,4 @@
 
-new const PluginVersion[] = "2.0.1";
-
 #include <amxmodx>
 #include <api_fubentity>
 
@@ -9,27 +7,17 @@ const MaxKeyLength = 64;
 const MaxStringDataLength = 128;
 
 new Trie: g_trDataSave;
+new g_fwdSettedData;
+new g_fwdChangeData;
 
 public plugin_precache() {
 
-	register_plugin("[API]: Entity Prefub", PluginVersion, "Ragamafona");
+	register_plugin("[API]: Entity Prefub", _sEntityPrefub_Version, "Ragamafona");
 
 	g_trDataSave = TrieCreate();
-
-	/* maybe
-	if(g_trDataSave == Invalid_Trie)
-	{
-		set_fail_state("Invalid trie");
-	}
-	*/
+	g_fwdSettedData = CreateMultiForward("evtfent_setted_data", ET_IGNORE, FP_CELL, FP_STRING, FP_CELL);
+	g_fwdChangeData = CreateMultiForward("evtfent_change_data", ET_IGNORE, FP_CELL, FP_STRING, FP_CELL);
 }
-
-#if AMXX_VERSION_NUM < 183
-public plugin_end() {
-
-	TrieDestroy(g_trDataSave);
-}
-#endif
 
 public plugin_natives()	{
 
@@ -50,6 +38,17 @@ bool: @__fubentity_set_data() {
 
 	get_string(Arg_Key, szKey, MaxKeyLength-1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
+
+	new bool: bHasData = TrieKeyExists(g_trDataSave, szKeyTrie);
+
+	if(bHasData)
+	{
+		ExecuteForward(g_fwdChangeData, _, pEntity, szKey, false);
+	}
+	else
+	{
+		ExecuteForward(g_fwdSettedData, _, pEntity, szKey, eCustomData_Set);
+	}
 
 	switch(get_param(Arg_Type))
 	{
@@ -72,6 +71,11 @@ bool: @__fubentity_set_data() {
 			new iValue = get_param_byref(Arg_Value);
 			TrieSetCell(g_trDataSave, szKeyTrie, iValue);
 		}
+	}
+
+	if(bHasData)
+	{
+		ExecuteForward(g_fwdChangeData, _, pEntity, szKey, true);
 	}
 
 	return true;
@@ -117,7 +121,7 @@ any: @__fubentity_get_data() {
 		}
 	}
 
-	return FubEntity_NotExists;
+	return 0;
 }
 
 bool: @__fubentity_isset_data() {
@@ -137,28 +141,34 @@ bool: @__fubentity_unset_data() {
 
 	enum {Arg_Entity = 1, Arg_Key};
 
+	new pEntity = get_param(Arg_Entity);
 	new szKey[MaxKeyLength];
 	new szKeyTrie[MaxKeyLength + MaxIndexLength];
 
 	get_string(Arg_Key, szKey, MaxKeyLength - 1);
-	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", get_param(Arg_Entity), szKey);
+	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
 
 	if(TrieKeyExists(g_trDataSave, szKeyTrie) == false)
+	{
 		return false;
+	}
 
 	TrieDeleteKey(g_trDataSave, szKeyTrie);
+
+	ExecuteForward(g_fwdSettedData, _, pEntity, szKey, eCustomData_UnSet);
 	return true;
 }
 
 @__fubentity_clear_data() {
 
-	enum {Arg_Entity = 1};
+	enum {Arg_Entity = 1, Arg_UseForward};
 
 	new Snapshot: hListKeys = TrieSnapshotCreate(g_trDataSave);
-	new szKey[MaxKeyLength];
+	new szKey[MaxKeyLength + MaxIndexLength];
 	new szLeft[MaxIndexLength];
-	new szBuffer[2];
+	new szBuffer[MaxKeyLength];
 	new pEntity = get_param(Arg_Entity);
+	new bool: bUseForward = bool: get_param(Arg_UseForward);
 	new iCountKeys;
 
 	for(new iCase; iCase < TrieSnapshotLength(hListKeys); iCase++)
@@ -167,12 +177,28 @@ bool: @__fubentity_unset_data() {
 		strtok2(szKey, szLeft, charsmax(szLeft), szBuffer, charsmax(szBuffer), ':', true);
 
 		if(str_to_num(szLeft) != pEntity)
+		{
 			continue;
+		}
 
 		TrieDeleteKey(g_trDataSave, szKey);
 		iCountKeys++;
+
+		if(bUseForward)
+		{
+			ExecuteForward(g_fwdSettedData, _, pEntity, szBuffer, eCustomData_UnSet);
+		}
 	}
 
 	TrieSnapshotDestroy(hListKeys);
 	return iCountKeys;
 }
+
+#if AMXX_VERSION_NUM < 183
+public plugin_end() {
+
+	TrieDestroy(g_trDataSave);
+	DestroyForward(g_fwdSettedData);
+	DestroyForward(g_fwdChangeData);
+}
+#endif
