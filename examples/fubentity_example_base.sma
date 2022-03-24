@@ -16,15 +16,15 @@ public plugin_precache() {
 	fubentity_clear_data(1, true);
 }
 
-public evtfent_setted_data(const pEntity, const szKey[], const iForwardType) {
+public evtfent_setted_data(const pEntity, const szKey[], const iTypeData, const iTypeForward) {
 
-	server_print("[%s] > Index: (%i), Key: (%s)", iForwardType ? "SET" : "UNSET", pEntity, szKey);
+	server_print("[%s] > Index: (%i), Key: (%s)", iTypeForward ? "SET" : "UNSET", pEntity, szKey);
 }
 
-public evtfent_change_data(const pEntity, const szKey[], const bool: bPost) {
+public evtfent_change_data(const pEntity, const szKey[], const iTypeData, const bool: bPost) {
 
 	server_print("[%s][CHANGE] > Index: (%i), Key: (%s), Value: (%i)", 
-		bPost ? "POST" : "PRE", pEntity, szKey, fubentity_get_data(pEntity, szKey, eType_Integer));
+		bPost ? "POST" : "PRE", pEntity, szKey, fubentity_get_data(pEntity, szKey, iTypeData));
 }
 
 // This method did not allow, if necessary, to change the data that had just arrived.

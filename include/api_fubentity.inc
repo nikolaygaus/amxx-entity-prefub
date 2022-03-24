@@ -19,8 +19,9 @@
 
 #define _fubentity_included
 
-stock const _sEntityPrefub_Version[] = "2.2.0";
-#define _EntityPrefub_Version 220
+const FubEntity_MaxIndexLength = 16;
+const FubEntity_MaxKeyLength = 64;
+const FubEntity_MaxStringDataLength = 128;
 
 enum _: {
 
@@ -29,10 +30,13 @@ enum _: {
 	eType_String
 };
 
+// * Just for lovers
+#define eType_Real eType_Float
+
 enum _: {
 
-    eCustomData_UnSet = 0,
-    eCustomData_Set
+	eCustomData_UnSet = 0,
+	eCustomData_Set
 };
 
 /**
@@ -41,36 +45,43 @@ enum _: {
  * 
  * @param pEntity       Index
  * @param szKey         Key
- * @param iForwardType  Forward type
+ * @param iTypeData     Data type
+ * @param iTypeForward  Forward type
  * 
  * @return              none
  */
-forward evtfent_setted_data(const pEntity, const szKey[], const iForwardType);
+forward evtfent_setted_data(const pEntity, const szKey[], const iTypeData, const iTypeForward);
 
 /**
  * Hook change key data.
  * 
  * @param pEntity       Index
  * @param szKey         Key
+ * @param iTypeData     Data type
  * @param bPost         Pre/Post event
  * 
  * @return              none
  */
-forward evtfent_change_data(const pEntity, const szKey[], const bool: bPost);
+forward evtfent_change_data(const pEntity, const szKey[], const iTypeData, const bool: bPost);
 
 /**
  * Set key value.
  * 
  * @param pEntity 		Index
  * @param szKey 		Key
- * @param iArgType 		Type Data
+ * @param iArgType 		Data type
  * @param any:... 		Value
+ * 
+ * @note				The sixth argument controls the forward call. Allows you to set data without calling forward.
  * 
  * @note				Usage examples:
  *                      [
  * 							fubentity_set_data(pPlayer, "crystal", eType_Integer, 5);
  * 							fubentity_set_data(pPlayer, "damage", eType_Float, 15.0);
  * 							fubentity_set_data(pPlayer, "zombiename", eType_String, "hunter");
+ * 
+ * 							// silent type
+ * 							fubentity_set_data(pPlayer, "mypassword", eType_String, "bestsilentdata", false);
  *                      ]
  * 
  * @return 				none
@@ -82,7 +93,7 @@ native fubentity_set_data(const pEntity, const szKey[], const iArgType = eType_I
  * 
  * @param pEntity 		Index
  * @param szKey 		Key
- * @param iArgType 		Type Data
+ * @param iArgType 		Data type
  * @param szValue 		String Buffer
  * @param iValueSize	String buffer length 
  * 
@@ -102,6 +113,7 @@ native any: fubentity_get_data(const pEntity, const szKey[], const iArgType = eT
  * 
  * @param pEntity 		Index
  * @param szKey 		Key
+ * @param bUseForward   Enable forward hook
  * 
  * @note				Usage examples:
  * 						[
@@ -111,7 +123,7 @@ native any: fubentity_get_data(const pEntity, const szKey[], const iArgType = eT
  * 
  * @return 				none
  */
-native fubentity_unset_data(const pEntity, const szKey[]);
+native fubentity_unset_data(const pEntity, const szKey[], const bool: bUseForward = true);
 
 /**
  * Key verification.
@@ -146,3 +158,68 @@ native bool: fubentity_isset_data(const pEntity, const szKey[]);
  * @return 				Removed keys count
  */
 native fubentity_clear_data(const pEntity, const bool: bUseForward = false);
+
+/*
+ * Reduction of functions due to macros
+ */
+
+#define cd_set_s(%0,%1,%2,%3) fubentity_set_data(%0,%1,%2,%3,false)
+
+#define cd_set(%0,%1,%2,%3) fubentity_set_data(%0,%1,%2,%3)
+
+#define cd_unset(%0,%1) fubentity_unset_data(%0,%1,true)
+
+#define cd_unset_s(%0,%1) fubentity_unset_data(%0,%1,false)
+
+#define cd_get(%0,%1,%2) fubentity_get_data(%0,%1,%2)
+
+#define cd_get_s(%0,%1,%2,%3,%4) fubentity_get_data(%0,%1,%2,%3,%4)
+
+#define cd_isset(%0,%1) fubentity_isset_data(%0,%1)
+
+#define cd_clear(%0,%1) fubentity_clear_data(%0,%1)
+
+stock any: cd_get_if(const pEntity, const szKey[], const iArgType, const any: iReturn = -1) {
+
+	if(fubentity_isset_data(pEntity, szKey))
+		return fubentity_get_data(pEntity, szKey, iArgType);
+
+	return iReturn;
+}
+
+/**
+ * This is the callback from the main plugin that gives major/minor versions
+ * for verifying compatibility for EntityPrefub versions.
+ * If an AMXX plugin gets a failure, then you do need to upgrade to the latest
+ * version of the EntityPrefub plugins or update the files included for AMXX plugins.
+ * Do not modify this!
+ */
+
+/**
+ * EntityPrefub version
+ */
+
+#define _EntityPrefub_Version 230
+#define FubEntity_Version_Major "2"
+#define FubEntity_Version_Minor "3"
+#define FubEntity_Version_Patch "0"
+#define _sEntityPrefub_Version FubEntity_Version_Major + "." + FubEntity_Version_Minor + "." + FubEntity_Version_Patch
+
+public __fubentity_version_check(const majorVersion[], const minorVersion[]) {
+
+	if(strcmp(majorVersion, FubEntity_Version_Major) != 0) {
+
+		set_fail_state("[FubEntity]: Api major version mismatch; expected %s, real %s",
+			FubEntity_Version_Major, majorVersion);
+
+		return;
+	}
+
+	if(strcmp(minorVersion, FubEntity_Version_Minor) != 0) {
+
+		set_fail_state("[FubEntity]: Api minor version mismatch; expected at least %s, real %s",
+			FubEntity_Version_Minor, minorVersion);
+
+		return;
+	}
+}
