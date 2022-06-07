@@ -8,11 +8,11 @@ public plugin_precache() {
 
 	register_plugin("[FubEntity]: Example", _sEntityPrefub_Version, "Ragamafona");
 
-	fubentity_set_data(0, CustomKeyData, eType_Integer, 123);
-	fubentity_set_data(0, CustomKeyData, eType_Integer, 321);
-	fubentity_unset_data(0, CustomKeyData);
+	fubentity_set_data(0, CustomKeyData, eType_Integer, 123, true);
+	fubentity_set_data(0, CustomKeyData, eType_Integer, 321, true);
+	fubentity_unset_data(0, CustomKeyData, true);
 
-	fubentity_set_data(1, CustomKeyData, eType_Integer, 123);
+	fubentity_set_data(1, CustomKeyData, eType_Integer, 123, true);
 	fubentity_clear_data(1, true);
 }
 
@@ -27,10 +27,12 @@ public evtfent_change_data(const pEntity, const szKey[], const iTypeData, const 
 		bPost ? "POST" : "PRE", pEntity, szKey, fubentity_get_data(pEntity, szKey, iTypeData));
 }
 
-// This method did not allow, if necessary, to change the data that had just arrived.
-// Therefore, the implementation was split into two separate forwards.
-/*
+/**
+ * This method did not allow, if necessary, to change the data that had just arrived.
+ * Therefore, the implementation was split into two separate forwards.
+ */
 
+/*
 public evtfent_change_data(const pEntity, const szKey[], const iForwardType) {
 
 	new const szForwardType[][] = {

@@ -7,7 +7,7 @@
 	- Allows you to set various data by keys and build a certain hierarchy of using functions
 	provided by the native.
 	
-	p.s. это некий аналог модулю Custom Entity Data и замена pev.
+	p.s. это некий аналог модулю Custom Entity Data и замена хранению данных в pev.
 	p.s. it is a kind of analogue of the Custom Entity Data module and a replacement for pev.
 
 	(c) Ragamafona (vk.com/felhalas)
@@ -31,7 +31,9 @@ enum _: {
 };
 
 // * Just for lovers
+#define eType_Int eType_Integer
 #define eType_Real eType_Float
+#define eType_Str eType_String
 
 enum _: {
 
@@ -71,14 +73,15 @@ forward evtfent_change_data(const pEntity, const szKey[], const iTypeData, const
  * @param szKey 		Key
  * @param iArgType 		Data type
  * @param any:... 		Value
+ * @param bUseForward   Whether to call forward set data? - true or false (param[5])
  * 
  * @note				The sixth argument controls the forward call. Allows you to set data without calling forward.
  * 
  * @note				Usage examples:
  *                      [
- * 							fubentity_set_data(pPlayer, "crystal", eType_Integer, 5);
- * 							fubentity_set_data(pPlayer, "damage", eType_Float, 15.0);
- * 							fubentity_set_data(pPlayer, "zombiename", eType_String, "hunter");
+ * 							fubentity_set_data(pPlayer, "crystal", eType_Integer, 5, true);
+ * 							fubentity_set_data(pPlayer, "damage", eType_Float, 15.0, true);
+ * 							fubentity_set_data(pPlayer, "zombiename", eType_String, "hunter", true);
  * 
  * 							// silent type
  * 							fubentity_set_data(pPlayer, "mypassword", eType_String, "bestsilentdata", false);
@@ -113,7 +116,7 @@ native any: fubentity_get_data(const pEntity, const szKey[], const iArgType = eT
  * 
  * @param pEntity 		Index
  * @param szKey 		Key
- * @param bUseForward   Enable forward hook
+ * @param bUseForward   Whether to call forward set data? - true or false
  * 
  * @note				Usage examples:
  * 						[
@@ -147,7 +150,7 @@ native bool: fubentity_isset_data(const pEntity, const szKey[]);
  * Removing getting keys by index.
  * 
  * @param pEntity 		Index
- * @param bUseForward   Enable forward hook
+ * @param bUseForward   Whether to call forward set data? - true or false
  * 
  * @note				Usage examples:
  * 						[
@@ -163,21 +166,19 @@ native fubentity_clear_data(const pEntity, const bool: bUseForward = false);
  * Reduction of functions due to macros
  */
 
+#define cd_set fubentity_set_data
+
 #define cd_set_s(%0,%1,%2,%3) fubentity_set_data(%0,%1,%2,%3,false)
 
-#define cd_set(%0,%1,%2,%3) fubentity_set_data(%0,%1,%2,%3)
-
-#define cd_unset(%0,%1) fubentity_unset_data(%0,%1,true)
+#define cd_unset fubentity_unset_data
 
 #define cd_unset_s(%0,%1) fubentity_unset_data(%0,%1,false)
 
-#define cd_get(%0,%1,%2) fubentity_get_data(%0,%1,%2)
+#define cd_get fubentity_get_data
 
-#define cd_get_s(%0,%1,%2,%3,%4) fubentity_get_data(%0,%1,%2,%3,%4)
+#define cd_isset fubentity_isset_data
 
-#define cd_isset(%0,%1) fubentity_isset_data(%0,%1)
-
-#define cd_clear(%0,%1) fubentity_clear_data(%0,%1)
+#define cd_clear fubentity_clear_data
 
 stock any: cd_get_if(const pEntity, const szKey[], const iArgType, const any: iReturn = -1) {
 
@@ -199,9 +200,9 @@ stock any: cd_get_if(const pEntity, const szKey[], const iArgType, const any: iR
  * EntityPrefub version
  */
 
-#define _EntityPrefub_Version 230
+#define _EntityPrefub_Version 240
 #define FubEntity_Version_Major "2"
-#define FubEntity_Version_Minor "3"
+#define FubEntity_Version_Minor "4"
 #define FubEntity_Version_Patch "0"
 #define _sEntityPrefub_Version FubEntity_Version_Major + "." + FubEntity_Version_Minor + "." + FubEntity_Version_Patch
 

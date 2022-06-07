@@ -1,6 +1,4 @@
 
-new const PluginVersion[] = "1.0.1";
-
 #include <amxmodx>
 #include <fakemeta>
 #include <reapi>
@@ -28,10 +26,10 @@ public plugin_precache() {
 
 public plugin_init() {
 
-	register_plugin("[FubEntity]: Test Rendering", PluginVersion, "Ragamafona");
+	register_plugin("[FubEntity]: Test Rendering", _sEntityPrefub_Version, "Ragamafona");
 
 	register_clcmd("say /render", "@ClientCommand_Render", ADMIN_RCON);
-	register_clcmd("rs_input", "@ClientCommand_Input", ADMIN_RCON);
+	register_concmd("rs_input", "@ClientCommand_Input", ADMIN_RCON);
 }
 
 public client_putinserver(pPlayer) {
@@ -53,8 +51,15 @@ public client_disconnected(pPlayer) {
 
 @ClientCommand_Render(const pPlayer, const iLevel) {
 
-	if(iLevel > 0 && ~get_user_flags(pPlayer) & iLevel)
+	if(!is_user_connected(pPlayer))
+	{
 		return;
+	}
+
+	if(iLevel > 0 && ~get_user_flags(pPlayer) & iLevel)
+	{
+		return;
+	}
 
 	Open_MenuMain(pPlayer, g_aPlayerData[pPlayer][epl_iMenuType] = 0);
 }
@@ -62,18 +67,26 @@ public client_disconnected(pPlayer) {
 @ClientCommand_Input(const pPlayer, const iLevel) {
 
 	if(!is_user_connected(pPlayer))
+	{
 		return;
+	}
+
+	if(iLevel > 0 && ~get_user_flags(pPlayer) & iLevel)
+	{
+		return;
+	}
 
 	new iInputNum = g_aPlayerData[pPlayer][epl_iInput];
 
 	if(!iInputNum)
+	{
 		return;
+	}
 
 	if(read_argc() != 2)
+	{
 		return;
-
-	if(iLevel > 0 && ~get_user_flags(pPlayer) & iLevel)
-		return;
+	}
 
 	g_aPlayerData[pPlayer][epl_flColor][iInputNum - 1] = read_argv_float(1);
 	Open_MenuMain(pPlayer, g_aPlayerData[pPlayer][epl_iMenuType] = 0);
@@ -85,7 +98,7 @@ Open_MenuMain(const pPlayer, const iType) {
 
 	new pMenuId = menu_create("\rTest rendering", "@Handle_MenuMain");
 
-	new const szRenderFx[][] = {
+	static const szRenderFx[][] = {
 
 		"kRenderFxNone",
 		"kRenderFxPulseSlow",
@@ -110,7 +123,7 @@ Open_MenuMain(const pPlayer, const iType) {
 		"kRenderFxClampMinScale"     /* Keep this sprite from getting very small (SPRITES only!) */
 	};
 
-	new const szRenderMode[][] = {
+	static const szRenderMode[][] = {
 
 		"kRenderNormal",		/* src */
 		"kRenderTransColor",	/* c*a+dest*(1-a) */
@@ -250,7 +263,9 @@ Func_UpdateEntityRender(const pPlayer) {
 	new pEntity = g_aPlayerData[pPlayer][epl_pEntity];
 
 	if(is_nullent(pEntity))
+	{
 		return;
+	}
 
 	new Float: flColor[3];
 
@@ -269,10 +284,14 @@ Func_UpdateEntityRender(const pPlayer) {
 public evtfent_setted_data(const pPlayer, const szKey[], const iTypeData, const iTypeForward) {
 
 	if(iTypeForward == eCustomData_UnSet)
+	{
 		return;
+	}
 
 	if(strcmp(CD_kModel, szKey))
+	{
 		return;
+	}
 
 	Func_UpdateModel(pPlayer);
 }
@@ -280,10 +299,14 @@ public evtfent_setted_data(const pPlayer, const szKey[], const iTypeData, const 
 public evtfent_change_data(const pPlayer, const szKey[], const iTypeData, const bool: bPost) {
 
 	if(bPost == false)
+	{
 		return;
+	}
 
 	if(strcmp(CD_kModel, szKey))
+	{
 		return;
+	}
 
 	Func_UpdateModel(pPlayer);
 }
@@ -293,7 +316,9 @@ Func_UpdateModel(const pPlayer) {
 	new pEntity = g_aPlayerData[pPlayer][epl_pEntity];
 
 	if(is_nullent(pEntity))
+	{
 		return;
+	}
 
 	new szBuffer[128];
 	fubentity_get_data(pPlayer, CD_kModel, eType_String, szBuffer, charsmax(szBuffer));

@@ -1,12 +1,10 @@
 
-new const PluginVersion[] = "1.0.1";
-
 #include <amxmodx>
 #include <api_fubentity>
 
 public plugin_init() {
 
-	register_plugin("Write Custom Data In Console", PluginVersion, "Ragamafona");
+	register_plugin("[FubEntity]: Write Custom Data In Console", _sEntityPrefub_Version, "Ragamafona");
 
 	// @note: cd_input <key> <i/r/s> <value> <index>
 	// 			cd_input "testkey" "r" "23.45" "5"
@@ -59,7 +57,7 @@ public plugin_init() {
 		{
 			new iValue = read_argv_int(Arg_Value);
 
-			fubentity_set_data(iEntityData, szKey, eType_Integer, iValue);
+			fubentity_set_data(iEntityData, szKey, eType_Integer, iValue, true);
 
 			strcat(szConsoleMessage, fmt("integer: ^"%i^"", iValue), charsmax(szConsoleMessage));
 		}
@@ -67,7 +65,7 @@ public plugin_init() {
 		{
 			new Float: flValue = read_argv_float(Arg_Value);
 
-			fubentity_set_data(iEntityData, szKey, eType_Float, flValue);
+			fubentity_set_data(iEntityData, szKey, eType_Float, flValue, true);
 
 			strcat(szConsoleMessage, fmt("real: ^"%f^"", flValue), charsmax(szConsoleMessage));
 		}
@@ -79,7 +77,7 @@ public plugin_init() {
 			remove_quotes(szBuffer);
 			trim(szBuffer);
 
-			fubentity_set_data(iEntityData, szKey, eType_String, szBuffer);
+			fubentity_set_data(iEntityData, szKey, eType_String, szBuffer, true);
 
 			strcat(szConsoleMessage, fmt("string: ^"%s^"", szBuffer), charsmax(szConsoleMessage));
 		}

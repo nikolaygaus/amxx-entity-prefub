@@ -1,6 +1,4 @@
 
-new const PluginVersion[] = "1.0.1";
-
 #include <amxmodx>
 #include <api_fubentity>
 
@@ -12,11 +10,11 @@ enum _: eData_Keys {
 	eKeys_iType
 };
 
-new Array: g_arKeys;
+new Array: g_arKeys = Invalid_Array;
 
 public plugin_init() {
 
-	register_plugin("[FubEntity]: Show keys for debug", PluginVersion, "Ragamafona");
+	register_plugin("[FubEntity]: Show keys for debug", _sEntityPrefub_Version, "Ragamafona");
 
 	// @note: cd_keys <i/k/t/v> <cut index>
 	// 			cd_keys

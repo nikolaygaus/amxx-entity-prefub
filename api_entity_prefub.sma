@@ -2,7 +2,7 @@
 #include <amxmodx>
 #include <api_fubentity>
 
-new Trie: g_trDataSave;
+new Trie: g_trDataSave = Invalid_Trie;
 new g_fwdSettedData;
 new g_fwdChangeData;
 
@@ -30,17 +30,17 @@ public plugin_natives()	{
 
 bool: @__fubentity_set_data(const iPluginId, const iParamsCount) {
 
-	enum {Arg_Entity = 1, Arg_Key, Arg_Type, Arg_Value, Arg_IgnoreForward};
+	enum {Arg_Entity = 1, Arg_Key, Arg_Type, Arg_Value, Arg_UseForward};
 
 	new pEntity = get_param(Arg_Entity);
 	new szKey[FubEntity_MaxKeyLength];
 	new szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
-	new bool: bIgnoreForward;
+	new bool: bUseForward;
 	new iTypeData = get_param(Arg_Type);
 
-	if(iParamsCount >= Arg_IgnoreForward)
+	if(iParamsCount == Arg_UseForward)
 	{
-		bIgnoreForward = bool: get_param(Arg_IgnoreForward);
+		bUseForward = bool: get_param_byref(Arg_UseForward);
 	}
 
 	get_string(Arg_Key, szKey, FubEntity_MaxKeyLength-1);
@@ -48,7 +48,7 @@ bool: @__fubentity_set_data(const iPluginId, const iParamsCount) {
 
 	new bool: bHasData;
 
-	if(bIgnoreForward == false)
+	if(bUseForward == true)
 	{
 		bHasData = TrieKeyExists(g_trDataSave, szKeyTrie);
 
@@ -81,7 +81,7 @@ bool: @__fubentity_set_data(const iPluginId, const iParamsCount) {
 		}
 	}
 
-	if(bIgnoreForward == false)
+	if(bUseForward == true)
 	{
 		if(bHasData)
 		{
@@ -190,10 +190,10 @@ bool: @__fubentity_unset_data() {
 	new bool: bUseForward = bool: get_param(Arg_UseForward);
 	new iCountKeys;
 
-	for(new iCase; iCase < TrieSnapshotLength(hListKeys); iCase++)
+	for(new i; i < TrieSnapshotLength(hListKeys); i++)
 	{
-		TrieSnapshotGetKey(hListKeys, iCase, szKey, charsmax(szKey));
-		strtok2(szKey, szLeft, charsmax(szLeft), szBuffer, charsmax(szBuffer), ':', true);
+		TrieSnapshotGetKey(hListKeys, i, szKey, charsmax(szKey));
+		strtok2(szKey, szLeft, charsmax(szLeft), szBuffer, charsmax(szBuffer), ':');
 
 		if(str_to_num(szLeft) != pEntity)
 		{
