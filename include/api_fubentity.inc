@@ -1,17 +1,9 @@
-/*
-	[API]: Entity Prefub
-	
-	- Позволяет устанавливать различные данные по ключам и строить некую иерархию использования функций
-	предоставленными нативами.
-
-	- Allows you to set various data by keys and build a certain hierarchy of using functions
-	provided by the native.
-	
-	p.s. это некий аналог модулю Custom Entity Data и замена хранению данных в pev.
-	p.s. it is a kind of analogue of the Custom Entity Data module and a replacement for pev.
-
-	(c) Ragamafona (vk.com/felhalas)
-*/
+/**
+ *	[API]: Entity Prefub
+ *	https://github.com/nikolaygaus/amxx-entity-prefub
+ *
+ *	(c) Ragamafona (vk.com/felhalas)
+ */
 
 #if defined _fubentity_included
 	#endinput
@@ -126,7 +118,7 @@ native any: fubentity_get_data(const pEntity, const szKey[], const iArgType = eT
  * 
  * @return 				none
  */
-native fubentity_unset_data(const pEntity, const szKey[], const bool: bUseForward = true);
+native fubentity_unset_data(const pEntity, const szKey[], const bool: bUseForward = false);
 
 /**
  * Key verification.
@@ -183,9 +175,16 @@ native fubentity_clear_data(const pEntity, const bool: bUseForward = false);
 stock any: cd_get_if(const pEntity, const szKey[], const iArgType, const any: iReturn = -1) {
 
 	if(fubentity_isset_data(pEntity, szKey))
+    {
 		return fubentity_get_data(pEntity, szKey, iArgType);
+    }
 
 	return iReturn;
+}
+
+stock GetPlayerIndexFE(const pPlayer, const iPos = 0) {
+
+    return MaxClients * iPos + pPlayer;
 }
 
 /**
@@ -200,10 +199,10 @@ stock any: cd_get_if(const pEntity, const szKey[], const iArgType, const any: iR
  * EntityPrefub version
  */
 
-#define _EntityPrefub_Version 240
+#define _EntityPrefub_Version 242
 #define FubEntity_Version_Major "2"
 #define FubEntity_Version_Minor "4"
-#define FubEntity_Version_Patch "0"
+#define FubEntity_Version_Patch "2"
 #define _sEntityPrefub_Version FubEntity_Version_Major + "." + FubEntity_Version_Minor + "." + FubEntity_Version_Patch
 
 public __fubentity_version_check(const majorVersion[], const minorVersion[]) {

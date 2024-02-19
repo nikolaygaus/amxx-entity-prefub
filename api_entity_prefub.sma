@@ -2,6 +2,8 @@
 #include <amxmodx>
 #include <api_fubentity>
 
+//	#define DEBUG_MODE
+
 new Trie: g_trDataSave = Invalid_Trie;
 new g_fwdSettedData;
 new g_fwdChangeData;
@@ -17,12 +19,17 @@ public plugin_precache() {
 
 	g_fwdSettedData = CreateMultiForward("evtfent_setted_data", ET_IGNORE, FP_CELL, FP_STRING, FP_CELL, FP_CELL);
 	g_fwdChangeData = CreateMultiForward("evtfent_change_data", ET_IGNORE, FP_CELL, FP_STRING, FP_CELL, FP_CELL);
+
+#if defined DEBUG_MODE
+	register_srvcmd("cd_print_keys", "@ServerCommand_PrintKeys");
+#endif
 }
 
 public plugin_natives()	{
 
 	register_native("fubentity_set_data", "@__fubentity_set_data", .style = false);
 	register_native("fubentity_get_data", "@__fubentity_get_data", .style = false);
+
 	register_native("fubentity_isset_data", "@__fubentity_isset_data", .style = false);
 	register_native("fubentity_unset_data", "@__fubentity_unset_data", .style = false);
 	register_native("fubentity_clear_data", "@__fubentity_clear_data", .style = false);
@@ -32,21 +39,24 @@ bool: @__fubentity_set_data(const iPluginId, const iParamsCount) {
 
 	enum {Arg_Entity = 1, Arg_Key, Arg_Type, Arg_Value, Arg_UseForward};
 
-	new pEntity = get_param(Arg_Entity);
-	new szKey[FubEntity_MaxKeyLength];
-	new szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
-	new bool: bUseForward;
-	new iTypeData = get_param(Arg_Type);
+	static pEntity;
+	static iTypeData;
+	static szKey[FubEntity_MaxKeyLength];
+	static szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+	static bool: bUseForward;
+	static bool: bHasData;
+
+	pEntity = get_param(Arg_Entity);
+	iTypeData = get_param(Arg_Type);
+	bUseForward = false;
 
 	if(iParamsCount == Arg_UseForward)
 	{
 		bUseForward = bool: get_param_byref(Arg_UseForward);
 	}
 
-	get_string(Arg_Key, szKey, FubEntity_MaxKeyLength-1);
+	get_string(Arg_Key, szKey, FubEntity_MaxKeyLength - 1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
-
-	new bool: bHasData;
 
 	if(bUseForward == true)
 	{
@@ -62,21 +72,23 @@ bool: @__fubentity_set_data(const iPluginId, const iParamsCount) {
 	{
 		case eType_Float:
 		{
-			new Float: flArray[1];
+			static Float: flArray[1];
 
 			flArray[0] = get_float_byref(Arg_Value);
 			TrieSetArray(g_trDataSave, szKeyTrie, flArray, sizeof(flArray));
 		}
 		case eType_String:
 		{
-			new szValueString[FubEntity_MaxStringDataLength];
+			static szValueString[FubEntity_MaxStringDataLength];
 
 			get_string(Arg_Value, szValueString, FubEntity_MaxStringDataLength-1);
 			TrieSetString(g_trDataSave, szKeyTrie, szValueString);
 		}
 		default:
 		{
-			new iValue = get_param_byref(Arg_Value);
+			static iValue;
+
+			iValue = get_param_byref(Arg_Value);
 			TrieSetCell(g_trDataSave, szKeyTrie, iValue);
 		}
 	}
@@ -100,9 +112,11 @@ any: @__fubentity_get_data() {
 
 	enum {Arg_Entity = 1, Arg_Key, Arg_Type, Arg_Value, Arg_ValueSize};
 
-	new pEntity = get_param(Arg_Entity);
-	new szKey[FubEntity_MaxKeyLength];
-	new szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+	static pEntity;
+	static szKey[FubEntity_MaxKeyLength];
+	static szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+
+	pEntity = get_param(Arg_Entity);
 
 	get_string(Arg_Key, szKey, FubEntity_MaxKeyLength-1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
@@ -111,16 +125,18 @@ any: @__fubentity_get_data() {
 	{
 		case eType_Float:
 		{
-			new Float: flArray[1];
+			static Float: flArray[1];
 
+			flArray[0] = 0.0; // For those who receive data without cd_isset
 			TrieGetArray(g_trDataSave, szKeyTrie, flArray, sizeof(flArray));
 
 			return Float: flArray[0];
 		}
 		case eType_String:
 		{
-			new szValueString[FubEntity_MaxStringDataLength];
+			static szValueString[FubEntity_MaxStringDataLength];
 
+			szValueString[0] = 0; // For those who receive data without cd_isset
 			TrieGetString(g_trDataSave, szKeyTrie, szValueString, FubEntity_MaxStringDataLength-1);
 			set_string(Arg_Value, szValueString, get_param(Arg_ValueSize));
 
@@ -128,8 +144,9 @@ any: @__fubentity_get_data() {
 		}
 		default:
 		{
-			new iReturn;
+			static iReturn;
 
+			iReturn = 0; // For those who receive data without cd_isset
 			TrieGetCell(g_trDataSave, szKeyTrie, iReturn);
 
 			return iReturn;
@@ -143,8 +160,8 @@ bool: @__fubentity_isset_data() {
 
 	enum {Arg_Entity = 1, Arg_Key};
 
-	new szKey[FubEntity_MaxKeyLength];
-	new szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+	static szKey[FubEntity_MaxKeyLength];
+	static szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
 
 	get_string(Arg_Key, szKey, FubEntity_MaxKeyLength - 1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", get_param(Arg_Entity), szKey);
@@ -156,9 +173,11 @@ bool: @__fubentity_unset_data() {
 
 	enum {Arg_Entity = 1, Arg_Key, Arg_UseForward};
 
-	new pEntity = get_param(Arg_Entity);
-	new szKey[FubEntity_MaxKeyLength];
-	new szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+	static pEntity;
+	static szKey[FubEntity_MaxKeyLength];
+	static szKeyTrie[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+
+	pEntity = get_param(Arg_Entity);
 
 	get_string(Arg_Key, szKey, FubEntity_MaxKeyLength - 1);
 	formatex(szKeyTrie, charsmax(szKeyTrie), "%i:%s", pEntity, szKey);
@@ -182,15 +201,22 @@ bool: @__fubentity_unset_data() {
 
 	enum {Arg_Entity = 1, Arg_UseForward};
 
-	new Snapshot: hListKeys = TrieSnapshotCreate(g_trDataSave);
-	new szKey[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
-	new szLeft[FubEntity_MaxIndexLength];
-	new szBuffer[FubEntity_MaxKeyLength];
-	new pEntity = get_param(Arg_Entity);
-	new bool: bUseForward = bool: get_param(Arg_UseForward);
-	new iCountKeys;
+	static Snapshot: hListKeys = Invalid_Snapshot;
+	static szKey[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+	static szLeft[FubEntity_MaxIndexLength];
+	static szBuffer[FubEntity_MaxKeyLength];
+	static pEntity;
+	static bool: bUseForward;
+	static iCountKeys;
+	static i;
+	static iSize;
 
-	for(new i; i < TrieSnapshotLength(hListKeys); i++)
+	hListKeys = TrieSnapshotCreate(g_trDataSave);
+	pEntity = get_param(Arg_Entity);
+	bUseForward = bool: get_param(Arg_UseForward);
+	iCountKeys = 0;
+
+	for(i = 0, iSize = TrieSnapshotLength(hListKeys); i < iSize; i++)
 	{
 		TrieSnapshotGetKey(hListKeys, i, szKey, charsmax(szKey));
 		strtok2(szKey, szLeft, charsmax(szLeft), szBuffer, charsmax(szBuffer), ':');
@@ -212,6 +238,33 @@ bool: @__fubentity_unset_data() {
 	TrieSnapshotDestroy(hListKeys);
 	return iCountKeys;
 }
+
+#if defined DEBUG_MODE
+@ServerCommand_PrintKeys() {
+
+	static Snapshot: hListKeys = Invalid_Snapshot;
+	static szKey[FubEntity_MaxKeyLength + FubEntity_MaxIndexLength];
+	static szLeft[FubEntity_MaxIndexLength];
+	static szBuffer[FubEntity_MaxKeyLength];
+	static i;
+	static iSize;
+
+	hListKeys = TrieSnapshotCreate(g_trDataSave);
+
+	for(i = 0, iSize = TrieSnapshotLength(hListKeys); i < iSize; i++)
+	{
+		TrieSnapshotGetKey(hListKeys, i, szKey, charsmax(szKey));
+		strtok2(szKey, szLeft, charsmax(szLeft), szBuffer, charsmax(szBuffer), ':');
+
+		server_print("%i. id: [%s] | key: [%s]", i + 1, szLeft, szBuffer);
+	}
+
+	server_print("[#] Print keys count: %i", iSize);
+
+	TrieSnapshotDestroy(hListKeys);
+	return iSize;
+}
+#endif
 
 #if AMXX_VERSION_NUM < 183
 public plugin_end() {
